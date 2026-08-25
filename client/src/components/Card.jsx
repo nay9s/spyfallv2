@@ -7,7 +7,7 @@ export const Card = ({ children, className = '' }) => {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.25, ease: 'easeOut' }}
-            className={`bg-[#111a2e]/88 backdrop-blur-xl rounded-[1.75rem] p-5 sm:p-6 shadow-[0_18px_60px_rgba(0,0,0,0.28)] border border-white/[0.08] ${className}`}
+            className={`game-panel relative bg-[#0d141c]/92 backdrop-blur-xl rounded-xl p-5 sm:p-6 shadow-[0_18px_60px_rgba(0,0,0,0.32)] border border-[#26323e] ${className}`}
         >
             {children}
         </motion.div>

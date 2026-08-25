@@ -1,6 +1,32 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import io from 'socket.io-client';
 import { AnimatePresence, motion } from 'framer-motion';
+import {
+  Check,
+  CheckCircle2,
+  ChevronRight,
+  CircleHelp,
+  Copy,
+  Crown,
+  Crosshair,
+  Eye,
+  EyeOff,
+  Fingerprint,
+  Globe2,
+  LockKeyhole,
+  LogOut,
+  Play,
+  Radar,
+  RefreshCw,
+  RotateCcw,
+  Search,
+  Shield,
+  ShieldAlert,
+  Target,
+  Trophy,
+  Wifi,
+  X,
+} from 'lucide-react';
 import { Button } from './components/Button';
 import { Input } from './components/Input';
 import { Card } from './components/Card';
@@ -393,12 +419,13 @@ function AppV2() {
   };
 
   return (
-    <div className="relative min-h-[100dvh] overflow-x-hidden bg-[#060914] text-slate-50">
+    <div className="relative min-h-[100dvh] overflow-x-hidden bg-[#05080b] text-slate-50">
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
-        <div className="absolute -left-28 -top-24 h-72 w-72 rounded-full bg-[#ff4d75]/12 blur-3xl" />
-        <div className="absolute -right-32 top-1/3 h-80 w-80 rounded-full bg-cyan-400/[0.08] blur-3xl" />
-        <div className="absolute bottom-[-9rem] left-1/4 h-80 w-80 rounded-full bg-violet-500/[0.08] blur-3xl" />
-        <div className="absolute inset-0 opacity-[0.035] [background-image:linear-gradient(rgba(255,255,255,.8)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.8)_1px,transparent_1px)] [background-size:32px_32px]" />
+        <div className="absolute -left-28 -top-24 h-72 w-72 rounded-full bg-[#ee4b55]/10 blur-3xl" />
+        <div className="absolute -right-32 top-1/3 h-80 w-80 rounded-full bg-[#22d3c5]/[0.07] blur-3xl" />
+        <div className="absolute bottom-[-9rem] left-1/4 h-80 w-80 rounded-full bg-[#4169e1]/[0.06] blur-3xl" />
+        <div className="absolute inset-0 opacity-[0.055] [background-image:linear-gradient(rgba(107,138,158,.45)_1px,transparent_1px),linear-gradient(90deg,rgba(107,138,158,.45)_1px,transparent_1px)] [background-size:28px_28px]" />
+        <div className="scanlines absolute inset-0 opacity-30" />
       </div>
 
       <main className="relative z-10 mx-auto min-h-[100dvh] w-full max-w-md px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))] sm:max-w-lg sm:px-6">
@@ -419,31 +446,46 @@ function AppV2() {
               className="flex min-h-[calc(100dvh-2rem)] flex-col justify-center py-5"
             >
               <div className="mb-7 text-center">
-                <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-[1.75rem] border border-white/10 bg-gradient-to-br from-[#ff4d75] via-[#ff6558] to-[#ff9a3d] text-4xl shadow-[0_20px_55px_rgba(255,77,117,0.3)]">🕵️</div>
-                <div className="mb-2 flex items-center justify-center gap-2">
-                  <h1 className="bg-gradient-to-r from-white via-rose-100 to-orange-200 bg-clip-text text-5xl font-black tracking-[-0.06em] text-transparent">SPYFALL</h1>
-                  <span className="rounded-full border border-white/10 bg-white/[0.06] px-2 py-1 text-[10px] font-bold text-slate-400">V2</span>
+                <div className="relative mx-auto mb-5 h-24 w-24">
+                  <div className="absolute inset-0 rotate-45 rounded-[1.35rem] border border-[#ee4b55]/30 bg-[#ee4b55]/[0.08] shadow-[0_0_45px_rgba(238,75,85,.16)]" />
+                  <div className="absolute inset-3 rotate-45 rounded-xl border border-white/10 bg-[#0b1118]" />
+                  <div className="absolute inset-0 flex items-center justify-center text-[#f0656e]">
+                    <Fingerprint size={44} strokeWidth={1.35} />
+                    <Crosshair className="absolute text-white" size={22} strokeWidth={1.5} />
+                  </div>
                 </div>
-                <p className="text-base font-medium text-slate-300">จับสายลับให้ได้ หรือเนียนให้รอด</p>
-                <div className={`mx-auto mt-4 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold ${isConnected ? 'border-emerald-400/15 bg-emerald-400/[0.07] text-emerald-300' : 'border-[#ff4d75]/20 bg-[#ff4d75]/10 text-[#ff7b98]'}`}>
-                  <span className={`h-2 w-2 rounded-full ${isConnected ? 'bg-emerald-400' : 'bg-[#ff4d75] animate-pulse'}`} />
-                  {isConnected ? 'พร้อมเล่นออนไลน์' : 'กำลังเชื่อมต่อเซิร์ฟเวอร์'}
+                <div className="mb-2 flex items-end justify-center gap-2">
+                  <h1 className="font-display text-5xl font-black tracking-[-0.045em] text-white">SPY<span className="text-[#ee4b55]">FALL</span></h1>
+                  <span className="mb-1 border border-[#3a4856] bg-[#111820] px-2 py-1 font-mono text-[9px] font-bold tracking-widest text-[#8091a1]">V2.0</span>
+                </div>
+                <p className="font-mono text-[10px] font-bold uppercase tracking-[0.32em] text-[#6f8291]">Social deduction protocol</p>
+                <p className="mt-3 text-sm font-medium text-slate-300">ค้นหาสายลับ ก่อนภารกิจจะถูกเปิดโปง</p>
+                <div className={`mx-auto mt-4 inline-flex items-center gap-2 border px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider ${isConnected ? 'border-[#22d3c5]/20 bg-[#22d3c5]/[0.06] text-[#63e6da]' : 'border-[#ee4b55]/25 bg-[#ee4b55]/10 text-[#f47a82]'}`}>
+                  {isConnected ? <Wifi size={13} /> : <Radar className="animate-pulse" size={13} />}
+                  {isConnected ? 'Network online' : 'Establishing uplink'}
                 </div>
               </div>
 
               <Card className="space-y-5">
+                <div className="flex items-center justify-between border-b border-white/[0.07] pb-4">
+                  <div>
+                    <p className="font-mono text-[9px] font-bold uppercase tracking-[0.28em] text-[#ee4b55]">Agent access</p>
+                    <h2 className="mt-1 text-lg font-black">เข้าสู่ภารกิจ</h2>
+                  </div>
+                  <Fingerprint size={26} strokeWidth={1.3} className="text-[#526474]" />
+                </div>
                 <div>
-                  <label className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-500">ชื่อผู้เล่น</label>
+                  <label className="mb-2 block font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-[#718492]">ชื่อสายลับ</label>
                   <Input
-                    placeholder="ใส่ชื่อของคุณ"
+                    placeholder="ระบุ Codename"
                     value={playerName}
                     onChange={(event) => setPlayerName(event.target.value)}
                   />
                 </div>
 
                 <div className="grid min-w-0 grid-cols-2 gap-2.5">
-                  <Button onClick={() => createRoom(false)} className="w-full px-2.5 text-sm sm:text-base">🔒 สร้างห้อง</Button>
-                  <Button onClick={() => createRoom(true)} variant="secondary" className="w-full px-2.5 text-sm sm:text-base">🌍 สาธารณะ</Button>
+                  <Button onClick={() => createRoom(false)} className="w-full px-2.5 text-sm sm:text-base"><LockKeyhole size={17} /> สร้างห้อง</Button>
+                  <Button onClick={() => createRoom(true)} variant="secondary" className="w-full px-2.5 text-sm sm:text-base"><Globe2 size={17} /> สาธารณะ</Button>
                 </div>
 
                 <div className="relative py-1">
@@ -458,14 +500,14 @@ function AppV2() {
                     onChange={(event) => setRoomId(event.target.value.toUpperCase())}
                     className="text-center font-mono font-bold uppercase tracking-[0.2em]"
                   />
-                  <Button onClick={() => joinRoom()} variant="secondary" className="px-3.5 text-sm sm:text-base">ไปเลย →</Button>
+                  <Button onClick={() => joinRoom()} variant="secondary" className="px-3.5 text-sm sm:text-base">เข้าร่วม <ChevronRight size={16} /></Button>
                 </div>
 
-                <Button onClick={fetchPublicRooms} variant="outline" className="w-full">⌕ ดูห้องสาธารณะ</Button>
+                <Button onClick={fetchPublicRooms} variant="outline" className="w-full"><Search size={17} /> ค้นหาห้องสาธารณะ</Button>
                 {error && <ErrorBanner message={error} />}
               </Card>
 
-              <p className="mt-5 text-center text-[11px] text-slate-600">88 สถานที่ • Reconnect อัตโนมัติ • เล่นได้ 3–12 คน</p>
+              <p className="mt-5 text-center font-mono text-[9px] uppercase tracking-[0.18em] text-[#4f606d]">88 locations · secure reconnect · 3–12 agents</p>
             </motion.div>
           )}
 
@@ -483,12 +525,12 @@ function AppV2() {
                   <Input placeholder="ชื่อของคุณ" value={playerName} onChange={(event) => setPlayerName(event.target.value)} />
                 </div>
 
-                <Button onClick={() => socket.emit('get_public_rooms')} variant="secondary" className="w-full">↻ รีเฟรชรายการ</Button>
+                <Button onClick={() => socket.emit('get_public_rooms')} variant="secondary" className="w-full"><RefreshCw size={17} /> รีเฟรชรายการ</Button>
 
                 <div className="max-h-[55dvh] space-y-3 overflow-y-auto pr-1">
                   {publicRooms.length === 0 ? (
                     <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.025] px-5 py-10 text-center">
-                      <div className="mb-3 text-3xl">🌙</div>
+                      <Radar className="mx-auto mb-3 text-[#526474]" size={34} strokeWidth={1.4} />
                       <p className="font-semibold text-slate-300">ยังไม่มีห้องสาธารณะ</p>
                       <p className="mt-1 text-xs text-slate-500">ลองรีเฟรชอีกครั้งในอีกสักครู่</p>
                     </div>
@@ -516,15 +558,15 @@ function AppV2() {
               <button
                 type="button"
                 onClick={copyRoomCode}
-                className="group w-full rounded-[1.75rem] border border-[#ff6688]/20 bg-gradient-to-br from-[#ff4d75]/15 via-[#111a2e]/90 to-cyan-400/[0.06] p-5 text-left shadow-[0_18px_50px_rgba(0,0,0,.22)]"
+                className="group w-full rounded-xl border border-[#ee4b55]/25 bg-[linear-gradient(115deg,rgba(238,75,85,.11),rgba(13,20,28,.96)_45%,rgba(34,211,197,.04))] p-5 text-left shadow-[0_18px_50px_rgba(0,0,0,.28)]"
               >
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#ff7b98]">รหัสห้อง</p>
+                    <p className="font-mono text-[9px] font-bold uppercase tracking-[0.28em] text-[#ee4b55]">Mission code</p>
                     <div className="mt-1 font-mono text-4xl font-black tracking-[0.18em] text-white">{roomId}</div>
                   </div>
-                  <div className="rounded-2xl border border-white/10 bg-white/[0.06] px-3 py-2 text-xs font-bold text-slate-300 transition group-active:scale-95">
-                    {copiedRoomCode ? '✓ คัดลอกแล้ว' : '⧉ คัดลอก'}
+                  <div className="inline-flex items-center gap-1.5 border border-white/10 bg-white/[0.06] px-3 py-2 text-xs font-bold text-slate-300 transition group-active:scale-95">
+                    {copiedRoomCode ? <><Check size={14} /> คัดลอกแล้ว</> : <><Copy size={14} /> คัดลอก</>}
                   </div>
                 </div>
               </button>
@@ -532,15 +574,15 @@ function AppV2() {
               <Card>
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Lobby</p>
+                    <p className="font-mono text-[9px] font-bold uppercase tracking-[0.25em] text-[#718492]">Operatives</p>
                     <h3 className="mt-1 text-xl font-black">ผู้เล่น <span className="text-slate-500">{connectedPlayers.length}/{players.length}</span></h3>
                   </div>
-                  {isHost && <span className="rounded-full border border-amber-400/15 bg-amber-400/[0.08] px-3 py-1.5 text-xs font-bold text-amber-300">★ Host</span>}
+                  {isHost && <span className="inline-flex items-center gap-1.5 border border-amber-400/20 bg-amber-400/[0.07] px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-amber-300"><Crown size={13} /> Commander</span>}
                 </div>
                 <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
                   {players.map((player) => (
                     <div key={player.id} className={`flex min-h-14 items-center gap-3 rounded-2xl border p-3 ${player.connected ? 'border-white/[0.07] bg-white/[0.035]' : 'border-white/[0.04] bg-black/10 opacity-45'}`}>
-                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-sm font-black text-white shadow-lg ${player.isHost ? 'bg-gradient-to-br from-amber-400 to-orange-500' : 'bg-gradient-to-br from-[#ff4d75] to-violet-500'}`}>{player.name?.[0]?.toUpperCase() || '?'}</div>
+                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border text-sm font-black text-white shadow-lg ${player.isHost ? 'border-amber-400/30 bg-[#8a5d19]' : 'border-[#425363] bg-[#263441]'}`}>{player.name?.[0]?.toUpperCase() || '?'}</div>
                       <div className="min-w-0 flex-1">
                         <div className="truncate font-bold text-slate-100">{player.name}</div>
                         <div className="mt-0.5 text-[11px] text-slate-500">{player.id === socket.id ? 'นี่คือคุณ' : player.connected ? 'ออนไลน์' : 'การเชื่อมต่อหลุด'}</div>
@@ -553,8 +595,8 @@ function AppV2() {
 
               <Card>
                 <div className="mb-5">
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">ตั้งค่าเกม</p>
-                  <h3 className="mt-1 text-xl font-black">พร้อมเล่นแบบไหน?</h3>
+                  <p className="font-mono text-[9px] font-bold uppercase tracking-[0.25em] text-[#718492]">Mission config</p>
+                  <h3 className="mt-1 text-xl font-black">ตั้งค่าปฏิบัติการ</h3>
                 </div>
                 <div className="mb-5">
                   <div className="mb-2 text-xs font-bold text-slate-400">การมองเห็นห้อง</div>
@@ -564,13 +606,13 @@ function AppV2() {
                       onClick={() => togglePrivacy(false)}
                       disabled={!isHost}
                       className={`min-h-11 rounded-xl px-3 text-sm font-extrabold transition ${!isPublic ? 'bg-white/10 text-white shadow-lg' : 'text-slate-500'} disabled:cursor-default`}
-                    >🔒 ส่วนตัว</button>
+                    ><EyeOff size={15} className="mr-1.5 inline" />ส่วนตัว</button>
                     <button
                       type="button"
                       onClick={() => togglePrivacy(true)}
                       disabled={!isHost}
                       className={`min-h-11 rounded-xl px-3 text-sm font-extrabold transition ${isPublic ? 'bg-emerald-400/15 text-emerald-300 shadow-lg' : 'text-slate-500'} disabled:cursor-default`}
-                    >🌍 สาธารณะ</button>
+                    ><Eye size={15} className="mr-1.5 inline" />สาธารณะ</button>
                   </div>
                 </div>
 
@@ -585,7 +627,7 @@ function AppV2() {
                       type="button"
                       onClick={() => updateGameLength(time)}
                       disabled={!isHost}
-                      className={`min-h-12 rounded-2xl border text-base font-black transition-all ${gameLength === time ? 'border-[#ff6688]/40 bg-[#ff4d75]/15 text-[#ff7b98] shadow-[0_8px_20px_rgba(255,77,117,.12)]' : 'border-white/[0.07] bg-white/[0.035] text-slate-500'} disabled:cursor-default`}
+                      className={`min-h-12 rounded-lg border font-mono text-base font-black transition-all ${gameLength === time ? 'border-[#ee4b55]/45 bg-[#ee4b55]/12 text-[#f47a82] shadow-[0_8px_20px_rgba(238,75,85,.1)]' : 'border-[#293642] bg-[#111922] text-[#667987]'} disabled:cursor-default`}
                     >{time}</button>
                   ))}
                 </div>
@@ -594,8 +636,8 @@ function AppV2() {
               <Card>
                 <div className="mb-4 flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Location pool</p>
-                    <h3 className="mt-1 text-xl font-black">สถานที่ในเกม</h3>
+                    <p className="font-mono text-[9px] font-bold uppercase tracking-[0.25em] text-[#22d3c5]">Intel database</p>
+                    <h3 className="mt-1 text-xl font-black">พื้นที่ปฏิบัติการ</h3>
                     <p className="mt-1 text-xs text-slate-500">
                       {isHost ? 'เลือกสถานที่ที่ต้องการใช้ในรอบถัดไป' : 'รายการที่ Host เลือกไว้'}
                     </p>
@@ -617,12 +659,12 @@ function AppV2() {
                       type="button"
                       onClick={() => saveSelectedLocations([...allLocations])}
                       className="min-h-11 rounded-xl border border-cyan-400/15 bg-cyan-400/[0.07] px-3 text-sm font-bold text-cyan-300 transition active:scale-[0.98]"
-                    >✓ เลือกทั้งหมด</button>
+                    ><Check size={15} className="mr-1 inline" />เลือกทั้งหมด</button>
                     <button
                       type="button"
                       onClick={() => saveSelectedLocations([])}
                       className="min-h-11 rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 text-sm font-bold text-slate-400 transition active:scale-[0.98]"
-                    >× ล้างทั้งหมด</button>
+                    ><X size={15} className="mr-1 inline" />ล้างทั้งหมด</button>
                   </div>
                 )}
 
@@ -636,10 +678,10 @@ function AppV2() {
                         onClick={() => toggleLocation(location)}
                         disabled={!isHost}
                         aria-pressed={checked}
-                        className={`flex min-h-12 items-center gap-3 rounded-2xl border p-3 text-left text-sm transition-colors ${checked ? 'border-[#ff6688]/25 bg-[#ff4d75]/10 text-white' : 'border-white/[0.06] bg-black/10 text-slate-500'} disabled:cursor-default`}
+                        className={`flex min-h-12 items-center gap-3 rounded-lg border p-3 text-left text-sm transition-colors ${checked ? 'border-[#22d3c5]/25 bg-[#22d3c5]/[0.07] text-white' : 'border-[#25323e] bg-[#080d12]/80 text-slate-500'} disabled:cursor-default`}
                       >
-                        <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border text-xs font-black ${checked ? 'border-[#ff6688] bg-[#ff4d75] text-white shadow-[0_5px_14px_rgba(255,77,117,.25)]' : 'border-white/10 bg-white/[0.03]'}`}>
-                          {checked ? '✓' : ''}
+                        <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded border text-xs font-black ${checked ? 'border-[#3fe1d3] bg-[#168f85] text-white shadow-[0_5px_14px_rgba(34,211,197,.16)]' : 'border-[#344351] bg-white/[0.02]'}`}>
+                          {checked ? <Check size={14} strokeWidth={3} /> : ''}
                         </span>
                         <span>{location}</span>
                       </button>
@@ -659,7 +701,7 @@ function AppV2() {
               <div className="sticky bottom-3 z-20 rounded-[1.6rem] border border-white/10 bg-[#09101f]/90 p-3 shadow-[0_18px_45px_rgba(0,0,0,.4)] backdrop-blur-2xl">
                 {isHost ? (
                   <>
-                    <Button onClick={startGame} disabled={connectedPlayers.length < 3 || selectedLocations.length < 1} className="w-full text-base">▶ เริ่มเกม</Button>
+                    <Button onClick={startGame} disabled={connectedPlayers.length < 3 || selectedLocations.length < 1} className="w-full text-base"><Play size={18} fill="currentColor" /> เริ่มภารกิจ</Button>
                     {connectedPlayers.length < 3 && <p className="mt-2 text-center text-[11px] text-slate-500">รอผู้เล่นอีก {3 - connectedPlayers.length} คน</p>}
                   </>
                 ) : (
@@ -669,14 +711,14 @@ function AppV2() {
                 )}
               </div>
 
-              <Button onClick={leaveGame} variant="outline" className="w-full text-sm">ออกจากห้อง</Button>
+              <Button onClick={leaveGame} variant="outline" className="w-full text-sm"><LogOut size={16} /> ออกจากห้อง</Button>
             </motion.div>
           )}
 
           {view === 'game' && gameData && (
             <motion.div key="game" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 pb-4">
               <div className="py-2 text-center">
-                <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-500">เวลาที่เหลือ</p>
+                <p className="mb-3 font-mono text-[9px] font-bold uppercase tracking-[0.28em] text-[#718492]">Mission timer</p>
                 <Timer initialTime={gameData.gameLength} onTick={setRemainingTime} />
               </div>
 
@@ -684,13 +726,13 @@ function AppV2() {
                 <>
                   <Card className={`relative overflow-hidden py-7 text-center ${gameData.isSpy ? 'border-[#ff4d75]/20 bg-gradient-to-b from-[#ff4d75]/10 to-[#111a2e]/90' : 'border-emerald-400/15 bg-gradient-to-b from-emerald-400/[0.07] to-[#111a2e]/90'}`}>
                     <div className={`absolute inset-x-0 top-0 h-1 ${gameData.isSpy ? 'bg-gradient-to-r from-[#ff4d75] to-orange-400' : 'bg-gradient-to-r from-emerald-400 to-cyan-400'}`} />
-                    <div className={`mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-[1.4rem] border text-3xl ${gameData.isSpy ? 'border-[#ff6688]/20 bg-[#ff4d75]/10' : 'border-emerald-400/15 bg-emerald-400/[0.08]'}`}>
-                      {gameData.isSpy ? '🕵️' : '🎭'}
+                    <div className={`mx-auto mb-4 flex h-16 w-16 items-center justify-center border ${gameData.isSpy ? 'border-[#ee4b55]/35 bg-[#ee4b55]/10 text-[#f0656e]' : 'border-[#22d3c5]/25 bg-[#22d3c5]/[0.07] text-[#63e6da]'}`}>
+                      {gameData.isSpy ? <Crosshair size={34} strokeWidth={1.5} /> : <Shield size={34} strokeWidth={1.5} />}
                     </div>
-                    <h2 className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-500">บทบาทของคุณ</h2>
+                    <h2 className="mb-2 font-mono text-[9px] font-bold uppercase tracking-[0.28em] text-[#718492]">Your clearance</h2>
                     <div className="mb-6 text-3xl font-black tracking-tight text-white">{gameData.role}</div>
                     <div className="my-6 h-px w-full bg-white/[0.08]" />
-                    <h2 className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-500">สถานที่</h2>
+                    <h2 className="mb-2 font-mono text-[9px] font-bold uppercase tracking-[0.28em] text-[#718492]">Operation zone</h2>
                     <div className={`text-4xl font-black tracking-tight ${gameData.isSpy ? 'text-[#ff6b8c]' : 'text-emerald-300'}`}>{gameData.location}</div>
 
                     {gameData.isSpy && (
@@ -703,7 +745,7 @@ function AppV2() {
                         >
                           {(remainingTime ?? gameData.gameLength) > 60
                             ? `ทายได้ในอีก ${Math.floor(((remainingTime ?? gameData.gameLength) - 60) / 60)}:${String(((remainingTime ?? gameData.gameLength) - 60) % 60).padStart(2, '0')}`
-                            : '⌖ ทายสถานที่ตอนนี้'}
+                            : <><Target size={17} /> ทายสถานที่ตอนนี้</>}
                         </Button>
                       </div>
                     )}
@@ -712,8 +754,8 @@ function AppV2() {
                   <Card>
                     <div className="mb-4 flex items-center justify-between">
                       <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Reference</p>
-                        <h3 className="mt-1 text-lg font-black">สถานที่ในรอบนี้</h3>
+                        <p className="font-mono text-[9px] font-bold uppercase tracking-[0.25em] text-[#22d3c5]">Intel reference</p>
+                        <h3 className="mt-1 text-lg font-black">ฐานข้อมูลพื้นที่</h3>
                       </div>
                       <span className="rounded-full bg-white/[0.05] px-3 py-1 text-xs font-bold text-slate-500">{gameData.allLocations?.length || 0} แห่ง</span>
                     </div>
@@ -736,15 +778,15 @@ function AppV2() {
               )}
 
               {error && <ErrorBanner message={error} />}
-              <Button onClick={leaveGame} variant="outline" className="w-full text-sm">ออกจากเกม</Button>
+              <Button onClick={leaveGame} variant="outline" className="w-full text-sm"><LogOut size={16} /> ถอนตัวจากเกม</Button>
             </motion.div>
           )}
 
           {view === 'voting' && (
             <motion.div key="voting" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 pb-4">
               <div className="py-3 text-center">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-[1.4rem] border border-[#ff6688]/20 bg-[#ff4d75]/10 text-3xl shadow-[0_14px_35px_rgba(255,77,117,.15)]">⌖</div>
-                <p className="mb-1 text-xs font-bold uppercase tracking-[0.2em] text-[#ff7b98]">Vote now</p>
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center border border-[#ee4b55]/30 bg-[#ee4b55]/10 text-[#f0656e] shadow-[0_14px_35px_rgba(238,75,85,.12)]"><Crosshair size={34} strokeWidth={1.4} /></div>
+                <p className="mb-1 font-mono text-[9px] font-bold uppercase tracking-[0.28em] text-[#f0656e]">Threat assessment</p>
                 <h2 className="mb-2 text-3xl font-black tracking-tight text-white">ใครคือ Spy?</h2>
                 <p className="mb-4 text-sm text-slate-400">เลือกผู้ต้องสงสัยก่อนหมดเวลา</p>
                 <Timer initialTime={phaseInitialTime ?? 30} />
@@ -768,14 +810,14 @@ function AppV2() {
                             <div className="truncate text-base font-bold text-white">{player.name}</div>
                             <div className="mt-0.5 text-xs text-slate-500">{isSelf ? 'คุณโหวตตัวเองไม่ได้' : player.connected ? 'แตะเพื่อโหวต' : 'การเชื่อมต่อหลุด'}</div>
                           </div>
-                          {!isSelf && player.connected && <span className="text-lg text-slate-600">›</span>}
+                          {!isSelf && player.connected && <ChevronRight size={19} className="text-slate-600" />}
                         </button>
                       );
                     })}
                   </div>
                 ) : (
                   <div className="py-10 text-center">
-                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-400/10 text-3xl">✓</div>
+                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center border border-emerald-400/20 bg-emerald-400/[0.07] text-emerald-300"><CheckCircle2 size={34} strokeWidth={1.5} /></div>
                     <h3 className="mb-2 text-xl font-black">ส่งคะแนนแล้ว</h3>
                     <p className="text-sm text-slate-400"><span className="animate-pulse">●</span> รอผู้เล่นคนอื่น...</p>
                   </div>
@@ -789,8 +831,8 @@ function AppV2() {
           {view === 'guessing' && gameData && (
             <motion.div key="guessing" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 pb-4">
               <div className="py-3 text-center">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-[1.4rem] border border-orange-400/20 bg-orange-400/10 text-3xl">🕵️</div>
-                <p className="mb-1 text-xs font-bold uppercase tracking-[0.2em] text-orange-300">Final chance</p>
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center border border-orange-400/25 bg-orange-400/[0.08] text-orange-300"><Target size={34} strokeWidth={1.4} /></div>
+                <p className="mb-1 font-mono text-[9px] font-bold uppercase tracking-[0.28em] text-orange-300">Final protocol</p>
                 <h2 className="mb-2 text-3xl font-black tracking-tight">Spy ถูกจับได้!</h2>
                 <p className="mb-4 text-sm text-slate-400">เหลือโอกาสสุดท้ายในการทายสถานที่</p>
                 <Timer initialTime={phaseInitialTime ?? 30} />
@@ -806,7 +848,7 @@ function AppV2() {
                 />
               ) : (
                 <Card className="py-12 text-center">
-                  <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.035] text-4xl">?</div>
+                  <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center border border-white/[0.08] bg-white/[0.035] text-[#718492]"><CircleHelp size={38} strokeWidth={1.3} /></div>
                   <h3 className="text-xl font-black">รอคำตอบจาก Spy</h3>
                   <p className="mt-2 text-sm text-slate-400"><span className="animate-pulse">●</span> กำลังเลือกสถานที่...</p>
                 </Card>
@@ -820,8 +862,10 @@ function AppV2() {
             <motion.div key="finished" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className="space-y-4 pb-4 text-center">
               <Card className={`relative overflow-hidden py-9 ${winner === 'spy' ? 'border-[#ff4d75]/20 bg-gradient-to-b from-[#ff4d75]/12 to-[#111a2e]/90' : 'border-emerald-400/20 bg-gradient-to-b from-emerald-400/10 to-[#111a2e]/90'}`}>
                 <div className={`absolute inset-x-0 top-0 h-1 ${winner === 'spy' ? 'bg-gradient-to-r from-[#ff4d75] to-orange-400' : 'bg-gradient-to-r from-emerald-400 to-cyan-400'}`} />
-                <div className="mb-2 text-xs font-bold uppercase tracking-[0.22em] text-slate-500">Game result</div>
-                <div className="my-5 text-7xl drop-shadow-2xl">{winner === 'spy' ? '🕵️' : winner === 'citizens' ? '🏆' : '⚠️'}</div>
+                <div className="mb-2 font-mono text-[9px] font-bold uppercase tracking-[0.28em] text-[#718492]">Mission debrief</div>
+                <div className={`mx-auto my-6 flex h-24 w-24 items-center justify-center border ${winner === 'spy' ? 'border-[#ee4b55]/30 bg-[#ee4b55]/10 text-[#f0656e]' : winner === 'citizens' ? 'border-emerald-400/25 bg-emerald-400/[0.07] text-emerald-300' : 'border-amber-400/25 bg-amber-400/[0.07] text-amber-300'}`}>
+                  {winner === 'spy' ? <Crosshair size={48} strokeWidth={1.25} /> : winner === 'citizens' ? <Trophy size={48} strokeWidth={1.25} /> : <ShieldAlert size={48} strokeWidth={1.25} />}
+                </div>
                 <h1 className={`mb-3 text-4xl font-black tracking-tight ${winner === 'spy' ? 'text-[#ff6b8c]' : winner === 'citizens' ? 'text-emerald-300' : 'text-amber-300'}`}>
                   {winner === 'spy' ? 'SPY ชนะ!' : winner === 'citizens' ? 'ชาวบ้านชนะ!' : 'ไม่พบผลเกม'}
                 </h1>
@@ -840,13 +884,13 @@ function AppV2() {
               </Card>
 
               {isHost ? (
-                <Button onClick={resetGame} variant="success" className="w-full text-base">↻ เล่นอีกครั้ง</Button>
+                <Button onClick={resetGame} variant="success" className="w-full text-base"><RotateCcw size={17} /> เริ่มปฏิบัติการใหม่</Button>
               ) : (
                 <div className="flex min-h-13 items-center justify-center gap-2 rounded-2xl border border-white/[0.08] bg-white/[0.035] text-sm font-semibold text-slate-400"><span className="h-2 w-2 animate-pulse rounded-full bg-cyan-400" /> รอ Host เริ่มรอบใหม่</div>
               )}
 
               {error && <ErrorBanner message={error} />}
-              <Button onClick={leaveGame} variant="outline" className="w-full text-sm">ออกจากห้อง</Button>
+              <Button onClick={leaveGame} variant="outline" className="w-full text-sm"><LogOut size={16} /> ออกจากห้อง</Button>
             </motion.div>
           )}
         </AnimatePresence>
@@ -868,13 +912,16 @@ function AppHeader({ roomId, isConnected, view }) {
   return (
     <header className="mb-5 flex items-center justify-between gap-3">
       <div className="flex items-center gap-2.5">
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-[#ff4d75] to-orange-400 text-lg shadow-[0_8px_22px_rgba(255,77,117,.2)]">🕵️</div>
+        <div className="relative flex h-10 w-10 items-center justify-center border border-[#ee4b55]/35 bg-[#ee4b55]/10 text-[#f0656e] shadow-[0_8px_22px_rgba(238,75,85,.12)]">
+          <Fingerprint size={22} strokeWidth={1.4} />
+          <Crosshair className="absolute text-white" size={11} strokeWidth={1.5} />
+        </div>
         <div>
-          <div className="text-sm font-black tracking-tight text-white">SPYFALL</div>
-          <div className="text-[11px] font-medium text-slate-500">{labels[view] || 'Online party game'}</div>
+          <div className="font-display text-sm font-black tracking-tight text-white">SPY<span className="text-[#ee4b55]">FALL</span></div>
+          <div className="font-mono text-[9px] font-medium uppercase tracking-wider text-[#667987]">{labels[view] || 'Online operation'}</div>
         </div>
       </div>
-      <div className="flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.035] px-3 py-2">
+      <div className="flex items-center gap-2 border border-white/[0.08] bg-white/[0.035] px-3 py-2">
         <span className={`h-2 w-2 rounded-full ${isConnected ? 'bg-emerald-400' : 'bg-[#ff4d75] animate-pulse'}`} />
         <span className="font-mono text-xs font-bold tracking-widest text-slate-300">{roomId || 'ONLINE'}</span>
       </div>
@@ -884,8 +931,8 @@ function AppHeader({ roomId, isConnected, view }) {
 
 function ErrorBanner({ message }) {
   return (
-    <div role="alert" className="flex items-start gap-2 rounded-2xl border border-[#ff4d75]/20 bg-[#ff4d75]/[0.08] px-3.5 py-3 text-left text-sm text-[#ff91a8]">
-      <span className="mt-0.5">!</span>
+    <div role="alert" className="flex items-start gap-2 border border-[#ee4b55]/25 bg-[#ee4b55]/[0.08] px-3.5 py-3 text-left text-sm text-[#f68b92]">
+      <ShieldAlert className="mt-0.5 shrink-0" size={16} />
       <span>{message}</span>
     </div>
   );
@@ -896,8 +943,8 @@ function LocationPicker({ query, setQuery, locations, total, onPick, onCancel })
     <Card className="border-orange-400/10">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-orange-300">Location guess</p>
-          <h3 className="mt-1 text-xl font-black">เลือกสถานที่</h3>
+          <p className="font-mono text-[9px] font-bold uppercase tracking-[0.25em] text-orange-300">Target location</p>
+          <h3 className="mt-1 text-xl font-black">ระบุพื้นที่ปฏิบัติการ</h3>
         </div>
         <span className="rounded-full bg-white/[0.05] px-3 py-1.5 text-xs font-bold text-slate-500">{locations.length}/{total}</span>
       </div>

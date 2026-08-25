@@ -7,7 +7,7 @@ export const Input = ({ value, onChange, placeholder, className = '' }) => {
             value={value}
             onChange={onChange}
             placeholder={placeholder}
-            className={`min-h-13 min-w-0 bg-[#09101f]/80 border border-white/10 text-white text-base rounded-2xl focus:ring-4 focus:ring-[#ff4d75]/15 focus:border-[#ff6688]/70 block w-full px-4 py-3.5 outline-none transition-all placeholder:text-slate-500 shadow-inner shadow-black/10 ${className}`}
+            className={`min-h-13 min-w-0 bg-[#070c11]/90 border border-[#2b3743] text-white text-base rounded-lg focus:ring-4 focus:ring-[#22d3c5]/10 focus:border-[#36cfc2]/60 block w-full px-4 py-3.5 outline-none transition-all placeholder:text-[#526474] shadow-inner shadow-black/20 ${className}`}
         />
     );
 };

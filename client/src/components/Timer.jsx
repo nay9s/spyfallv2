@@ -33,7 +33,7 @@ export const Timer = ({ initialTime, onTick }) => {
     const isUrgent = timeLeft <= 60;
 
     return (
-        <div className={`inline-flex items-center gap-3 rounded-full border px-5 py-2.5 font-mono shadow-lg ${isUrgent ? 'border-[#ff4d75]/40 bg-[#ff4d75]/10 text-[#ff6b8c] shadow-[#ff4d75]/10' : 'border-cyan-400/20 bg-cyan-400/[0.08] text-cyan-300 shadow-cyan-500/5'}`}>
+        <div className={`inline-flex items-center gap-3 border px-5 py-2.5 font-mono shadow-lg ${isUrgent ? 'border-[#ee4b55]/40 bg-[#ee4b55]/10 text-[#f0656e] shadow-[#ee4b55]/10' : 'border-[#22d3c5]/25 bg-[#22d3c5]/[0.06] text-[#63e6da] shadow-cyan-500/5'}`}>
             <span className={`h-2.5 w-2.5 rounded-full ${isUrgent ? 'bg-[#ff4d75] animate-pulse' : 'bg-cyan-400'}`} />
             <span className="text-2xl font-black tracking-tight">
                 {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
