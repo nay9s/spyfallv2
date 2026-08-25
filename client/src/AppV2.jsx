@@ -22,6 +22,7 @@ import {
   ShieldAlert,
   Target,
   Trophy,
+  Users,
   Wifi,
   X,
 } from 'lucide-react';
@@ -53,6 +54,7 @@ function AppV2() {
   const [roomId, setRoomId] = useState(() => localStorage.getItem(STORAGE.roomId) || '');
   const [sessionToken, setSessionToken] = useState(() => localStorage.getItem(STORAGE.sessionToken) || '');
   const [players, setPlayers] = useState([]);
+  const [showPlayerStatus, setShowPlayerStatus] = useState(false);
   const [isHost, setIsHost] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
   const [publicRooms, setPublicRooms] = useState([]);
@@ -826,10 +828,68 @@ function AppV2() {
 
           {view === 'game' && gameData && (
             <motion.div key="game" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 pb-4">
-              <div className="py-2 text-center">
+              <div className="relative py-2 text-center">
+                <button
+                  type="button"
+                  onClick={() => setShowPlayerStatus((open) => !open)}
+                  aria-label="เช็กผู้เล่นในห้อง"
+                  title="เช็กผู้เล่น"
+                  className={`absolute right-0 top-0 flex h-11 w-11 items-center justify-center rounded-2xl border transition-all active:scale-95 ${showPlayerStatus ? 'border-cyan-300/35 bg-cyan-300/10 text-cyan-200' : 'border-white/[0.08] bg-white/[0.035] text-slate-300'}`}
+                >
+                  <Users size={21} />
+                  <span className="absolute -right-1 -top-1 flex min-w-5 h-5 items-center justify-center rounded-full bg-cyan-300 px-1 text-[10px] font-black text-slate-950">{connectedPlayers.length}</span>
+                </button>
                 <p className="mb-3 font-mono text-[9px] font-bold uppercase tracking-[0.28em] text-[#718492]">Mission timer</p>
                 <Timer initialTime={gameData.gameLength} onTick={setRemainingTime} />
               </div>
+
+              <AnimatePresence>
+                {showPlayerStatus && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                  >
+                    <Card>
+                      <div className="mb-4 flex items-center justify-between">
+                        <div>
+                          <p className="font-mono text-[9px] font-bold uppercase tracking-[0.25em] text-cyan-300">Room status</p>
+                          <h3 className="mt-1 text-lg font-black">ผู้เล่นตอนนี้</h3>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowPlayerStatus(false)}
+                          aria-label="ปิดรายชื่อผู้เล่น"
+                          className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.035] text-slate-400 active:scale-95"
+                        >
+                          <X size={17} />
+                        </button>
+                      </div>
+                      <div className="space-y-2">
+                        {players.map((player) => (
+                          <div key={player.id} className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2.5">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/[0.06] text-sm font-black text-white">{player.name?.[0]?.toUpperCase() || '?'}</div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="truncate text-sm font-bold text-white">{player.name}{player.id === socket.id ? ' (คุณ)' : ''}</span>
+                                {player.isHost && <Crown size={13} className="shrink-0 text-amber-300" />}
+                              </div>
+                              <div className={`mt-0.5 text-[11px] ${!player.connected ? 'text-[#f0656e]' : player.isScreenFolded ? 'text-cyan-300' : 'text-slate-500'}`}>
+                                {!player.connected
+                                  ? 'การเชื่อมต่อหลุด'
+                                  : player.isScreenFolded
+                                    ? `พับจออยู่ · เหลือเวลาเกม ${formatSeconds(remainingTime ?? gameData.gameLength)}`
+                                    : 'กำลังเล่น'}
+                              </div>
+                            </div>
+                            <span className={`h-2.5 w-2.5 rounded-full ${!player.connected ? 'bg-[#ee4b55]' : player.isScreenFolded ? 'bg-cyan-300 animate-pulse' : 'bg-emerald-400'}`} />
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {!isScreenFolded ? (
                 <>
@@ -879,36 +939,6 @@ function AppV2() {
                     </div>
                   </Card>
 
-                  <Card>
-                    <div className="mb-4 flex items-center justify-between">
-                      <div>
-                        <p className="font-mono text-[9px] font-bold uppercase tracking-[0.25em] text-cyan-300">Room status</p>
-                        <h3 className="mt-1 text-lg font-black">ผู้เล่นตอนนี้</h3>
-                      </div>
-                      <span className="rounded-full bg-white/[0.05] px-3 py-1 text-xs font-bold text-slate-500">{connectedPlayers.length}/{players.length}</span>
-                    </div>
-                    <div className="space-y-2">
-                      {players.map((player) => (
-                        <div key={player.id} className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2.5">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/[0.06] text-sm font-black text-white">{player.name?.[0]?.toUpperCase() || '?'}</div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="truncate text-sm font-bold text-white">{player.name}{player.id === socket.id ? ' (คุณ)' : ''}</span>
-                              {player.isHost && <Crown size={13} className="shrink-0 text-amber-300" />}
-                            </div>
-                            <div className={`mt-0.5 text-[11px] ${!player.connected ? 'text-[#f0656e]' : player.isScreenFolded ? 'text-cyan-300' : 'text-slate-500'}`}>
-                              {!player.connected
-                                ? 'การเชื่อมต่อหลุด'
-                                : player.isScreenFolded
-                                  ? `พับจออยู่ · เหลือเวลาเกม ${formatSeconds(remainingTime ?? gameData.gameLength)}`
-                                  : 'กำลังเล่น'}
-                            </div>
-                          </div>
-                          <span className={`h-2.5 w-2.5 rounded-full ${!player.connected ? 'bg-[#ee4b55]' : player.isScreenFolded ? 'bg-cyan-300 animate-pulse' : 'bg-emerald-400'}`} />
-                        </div>
-                      ))}
-                    </div>
-                  </Card>
                 </>
               ) : (
                 <>
