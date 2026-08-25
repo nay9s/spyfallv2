@@ -10,6 +10,8 @@ npm start
 ```
 The server will start on port 3001.
 
+For deployment, set `CLIENT_URL` to the frontend origin. Multiple frontend origins can be provided as a comma-separated `CLIENT_URLS` value. The hosted frontend at `https://spyfallv2-client.onrender.com` is allowed by default.
+
 ### 2. Start the Frontend Client
 Open a new terminal in the `client` directory and run:
 ```bash
