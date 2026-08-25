@@ -140,7 +140,24 @@ function getPublicPlayerList(players) {
     name: player.name,
     isHost: player.isHost,
     connected: player.connected,
+    isScreenFolded: Boolean(player.isScreenFolded),
   }));
+}
+
+function getVotingStatus(room) {
+  const connectedIds = new Set(getConnectedPlayers(room).map((player) => player.id));
+  return {
+    votedPlayerIds: Object.keys(room.votes || {}).filter((playerId) => connectedIds.has(playerId)),
+  };
+}
+
+function emitVotingStatus(room) {
+  io.to(room.id).emit('voting_update', getVotingStatus(room));
+}
+
+function getPlayingRemainingMs(room) {
+  if (!room.startTime) return 0;
+  return Math.max(0, (room.gameLength * GAME_MINUTE_MS) - (Date.now() - room.startTime));
 }
 
 function getConnectedPlayers(room) {
@@ -169,7 +186,9 @@ function buildGameState(room, player) {
   const elapsedSeconds = room.startTime ? (Date.now() - room.startTime) / 1000 : 0;
   const remainingTime = room.status === 'playing'
     ? Math.max(0, Math.floor(totalSeconds - elapsedSeconds))
-    : 0;
+    : room.status === 'guessing' && room.guessingSource === 'manual'
+      ? Math.max(0, Math.ceil((room.pausedRemainingMs || 0) / 1000))
+      : 0;
   const phaseRemainingTime = ['voting', 'guessing'].includes(room.status) && room.phaseDeadline
     ? Math.max(0, Math.ceil((room.phaseDeadline - Date.now()) / 1000))
     : 0;
@@ -186,6 +205,9 @@ function buildGameState(room, player) {
     allLocations: [...room.selectedLocations],
     result: room.result || null,
     hasVoted: Boolean(room.votes[player.id]),
+    votedPlayerIds: getVotingStatus(room).votedPlayerIds,
+    isScreenFolded: Boolean(player.isScreenFolded),
+    guessingSource: room.guessingSource || null,
   };
 }
 
@@ -212,7 +234,12 @@ function finishGame(room, { winner, reason, reasonCode }) {
 
   clearRoomTimer(room);
   room.phaseDeadline = null;
+  room.guessingSource = null;
+  room.pausedRemainingMs = null;
   room.status = 'finished';
+  room.players.forEach((player) => {
+    player.isScreenFolded = false;
+  });
   const spy = room.players.find((player) => player.id === room.spyId);
   room.result = {
     winner,
@@ -222,6 +249,7 @@ function finishGame(room, { winner, reason, reasonCode }) {
     spyName: spy?.name || 'Unknown',
   };
   io.to(room.id).emit('game_over', room.result);
+  io.to(room.id).emit('player_update', getPublicPlayerList(room.players));
 }
 
 function startGuessing(room) {
@@ -229,8 +257,11 @@ function startGuessing(room) {
 
   clearRoomTimer(room);
   room.status = 'guessing';
+  room.guessingSource = 'vote';
+  room.pausedRemainingMs = null;
   room.phaseDeadline = Date.now() + GUESSING_DURATION_MS;
   io.to(room.id).emit('spy_guess_phase', {
+    source: 'vote',
     remainingTime: Math.ceil(GUESSING_DURATION_MS / 1000),
     deadline: room.phaseDeadline,
   });
@@ -242,6 +273,25 @@ function startGuessing(room) {
       reason: `Spy ไม่ทายภายในเวลา — ชาวบ้านชนะ! สถานที่คือ ${room.location.name}`,
     });
   }, GUESSING_DURATION_MS);
+}
+
+function startManualSpyGuess(room) {
+  if (room.status !== 'playing') return;
+
+  room.pausedRemainingMs = getPlayingRemainingMs(room);
+  clearRoomTimer(room);
+  room.status = 'guessing';
+  room.guessingSource = 'manual';
+  room.phaseDeadline = null;
+  room.players.forEach((player) => {
+    player.isScreenFolded = false;
+  });
+
+  io.to(room.id).emit('spy_guess_phase', {
+    source: 'manual',
+    pausedGameTime: Math.ceil(room.pausedRemainingMs / 1000),
+  });
+  io.to(room.id).emit('player_update', getPublicPlayerList(room.players));
 }
 
 function maybeResolveVoting(room, { force = false } = {}) {
@@ -315,12 +365,19 @@ function startVoting(room) {
 
   clearRoomTimer(room);
   room.status = 'voting';
+  room.guessingSource = null;
+  room.pausedRemainingMs = null;
   room.votes = {};
+  room.players.forEach((player) => {
+    player.isScreenFolded = false;
+  });
   room.phaseDeadline = Date.now() + VOTING_DURATION_MS;
   io.to(room.id).emit('start_voting', {
     remainingTime: Math.ceil(VOTING_DURATION_MS / 1000),
     deadline: room.phaseDeadline,
   });
+  io.to(room.id).emit('player_update', getPublicPlayerList(room.players));
+  emitVotingStatus(room);
   room.timer = setTimeout(() => {
     maybeResolveVoting(room, { force: true });
   }, VOTING_DURATION_MS);
@@ -363,6 +420,7 @@ io.on('connection', (socket) => {
       name,
       isHost: true,
       connected: true,
+      isScreenFolded: false,
       sessionToken: generateSessionToken(),
     };
 
@@ -379,6 +437,8 @@ io.on('connection', (socket) => {
       consecutiveSpyRounds: 0,
       timer: null,
       phaseDeadline: null,
+      guessingSource: null,
+      pausedRemainingMs: null,
       isPublic: typeof isPublic === 'boolean' ? isPublic : false,
       selectedLocations: [...allLocationNames],
       result: null,
@@ -443,6 +503,7 @@ io.on('connection', (socket) => {
       socket.join(normalizedRoomId);
       emitRoomJoined(socket, room, existingPlayer);
       io.to(normalizedRoomId).emit('player_update', getPublicPlayerList(room.players));
+      if (room.status === 'voting') emitVotingStatus(room);
       maybeResolveVoting(room);
       return;
     }
@@ -455,6 +516,7 @@ io.on('connection', (socket) => {
       name,
       isHost: false,
       connected: true,
+      isScreenFolded: false,
       sessionToken: generateSessionToken(),
     };
 
@@ -463,6 +525,7 @@ io.on('connection', (socket) => {
     socket.join(normalizedRoomId);
 
     io.to(normalizedRoomId).emit('player_update', getPublicPlayerList(room.players));
+    if (room.status === 'voting') emitVotingStatus(room);
     emitRoomJoined(socket, room, player);
     console.log(`${name} joined room ${normalizedRoomId}`);
   });
@@ -536,8 +599,13 @@ io.on('connection', (socket) => {
     room.status = 'playing';
     room.startTime = Date.now();
     room.phaseDeadline = null;
+    room.guessingSource = null;
+    room.pausedRemainingMs = null;
     room.votes = {};
     room.result = null;
+    room.players.forEach((player) => {
+      player.isScreenFolded = false;
+    });
 
     const spyIndex = chooseSpyIndex(
       room.players,
@@ -571,6 +639,8 @@ io.on('connection', (socket) => {
       });
     });
 
+    io.to(room.id).emit('player_update', getPublicPlayerList(room.players));
+
     clearRoomTimer(room);
     room.timer = setTimeout(() => {
       startVoting(room);
@@ -590,21 +660,44 @@ io.on('connection', (socket) => {
 
     room.votes[voter.id] = suspect.id;
     socket.emit('vote_recorded');
+    emitVotingStatus(room);
     maybeResolveVoting(room);
+  });
+
+  socket.on('set_screen_folded', ({ roomId, folded } = {}) => {
+    const room = rooms.get(normalizeRoomId(roomId));
+    if (!room || room.status !== 'playing') return emitError(socket, 'โหมดกันมองใช้ได้เฉพาะตอนกำลังเล่น');
+
+    const player = room.players.find((item) => item.id === socket.id && item.connected);
+    if (!player) return emitError(socket, 'ไม่พบผู้เล่นในห้อง');
+
+    player.isScreenFolded = Boolean(folded);
+    io.to(room.id).emit('player_update', getPublicPlayerList(room.players));
+  });
+
+  socket.on('spy_start_guess', ({ roomId } = {}) => {
+    const room = rooms.get(normalizeRoomId(roomId));
+    if (!room || !room.location) return emitError(socket, 'ไม่พบเกมนี้');
+    if (room.status !== 'playing') return emitError(socket, 'ตอนนี้ยังเริ่มทายสถานที่ไม่ได้');
+    if (socket.id !== room.spyId) return emitError(socket, 'เฉพาะ Spy เท่านั้นที่ทายสถานที่ได้');
+
+    const spy = room.players.find((player) => player.id === socket.id && player.connected);
+    if (!spy) return emitError(socket, 'ไม่พบ Spy ในห้อง');
+    if (spy.isScreenFolded) return emitError(socket, 'กรุณาปิดโหมดกันมองก่อนทายสถานที่');
+
+    const remainingTime = getPlayingRemainingMs(room);
+    if (remainingTime > GAME_MINUTE_MS + 1000) {
+      return emitError(socket, 'Spy ทายได้ในช่วง 1 นาทีสุดท้ายเท่านั้น');
+    }
+
+    startManualSpyGuess(room);
   });
 
   socket.on('spy_guess_location', ({ roomId, locationName } = {}) => {
     const room = rooms.get(normalizeRoomId(roomId));
     if (!room || !room.location) return emitError(socket, 'ไม่พบเกมนี้');
     if (socket.id !== room.spyId) return emitError(socket, 'เฉพาะ Spy เท่านั้นที่ทายสถานที่ได้');
-    if (!['playing', 'guessing'].includes(room.status)) return emitError(socket, 'ตอนนี้ยังทายสถานที่ไม่ได้');
-
-    if (room.status === 'playing') {
-      const remainingTime = room.gameLength * GAME_MINUTE_MS - (Date.now() - room.startTime);
-      if (remainingTime > GAME_MINUTE_MS + 1000) {
-        return emitError(socket, 'Spy ทายได้ในช่วง 1 นาทีสุดท้ายเท่านั้น');
-      }
-    }
+    if (room.status !== 'guessing') return emitError(socket, 'ต้องหยุดเกมเพื่อเข้าสู่ช่วงทายสถานที่ก่อน');
 
     if (!room.selectedLocations.includes(locationName)) {
       return emitError(socket, 'สถานที่ที่เลือกไม่อยู่ในรายการของรอบนี้');
@@ -639,10 +732,15 @@ io.on('connection', (socket) => {
     room.location = null;
     room.startTime = null;
     room.phaseDeadline = null;
+    room.guessingSource = null;
+    room.pausedRemainingMs = null;
     room.votes = {};
     room.spyId = null;
     room.result = null;
-    room.players.forEach((item) => delete item.role);
+    room.players.forEach((item) => {
+      delete item.role;
+      item.isScreenFolded = false;
+    });
 
     io.to(room.id).emit('room_reset');
     io.to(room.id).emit('player_update', getPublicPlayerList(room.players));
@@ -670,6 +768,7 @@ io.on('connection', (socket) => {
     // Broadcast the removal before resolving any game outcome so Lobby clients
     // never retain a player until the reconnect timeout.
     io.to(normalizedRoomId).emit('player_update', getPublicPlayerList(room.players));
+    if (room.status === 'voting') emitVotingStatus(room);
 
     if (wasSpy && ['playing', 'voting', 'guessing'].includes(room.status)) {
       finishGame(room, {
@@ -714,6 +813,7 @@ io.on('connection', (socket) => {
       player.connected = false;
       ensureHost(room);
       io.to(roomId).emit('player_update', getPublicPlayerList(room.players));
+      if (room.status === 'voting') emitVotingStatus(room);
       maybeResolveVoting(room);
 
       player.disconnectTimeout = setTimeout(() => {
@@ -739,6 +839,7 @@ io.on('connection', (socket) => {
         }
 
         io.to(roomId).emit('player_update', getPublicPlayerList(room.players));
+        if (room.status === 'voting') emitVotingStatus(room);
         maybeResolveVoting(room);
       }, RECONNECT_GRACE_MS);
     });

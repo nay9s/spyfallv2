@@ -12,8 +12,6 @@ import {
   Eye,
   EyeOff,
   Fingerprint,
-  Globe2,
-  LockKeyhole,
   LogOut,
   Play,
   Radar,
@@ -69,11 +67,15 @@ function AppV2() {
   const [winReason, setWinReason] = useState('');
   const [spyName, setSpyName] = useState('');
   const [hasVoted, setHasVoted] = useState(false);
-  const [isSpyGuessing, setIsSpyGuessing] = useState(false);
+  const [votedPlayerIds, setVotedPlayerIds] = useState([]);
+  const [isScreenFolded, setIsScreenFolded] = useState(false);
+  const [guessingSource, setGuessingSource] = useState(null);
+  const [pausedGameTime, setPausedGameTime] = useState(null);
   const [locationQuery, setLocationQuery] = useState('');
   const [error, setError] = useState('');
   const [isConnected, setIsConnected] = useState(socket.connected);
   const [copiedRoomCode, setCopiedRoomCode] = useState(false);
+  const [pendingEntry, setPendingEntry] = useState(null);
 
   const sessionRef = useRef({ playerName, roomId, sessionToken });
 
@@ -121,7 +123,12 @@ function AppV2() {
       if (data.sessionToken) localStorage.setItem(STORAGE.sessionToken, data.sessionToken);
 
       setError('');
-      setIsSpyGuessing(false);
+      setPendingEntry(null);
+      setIsScreenFolded(Boolean(data.gameState?.isScreenFolded));
+      setGuessingSource(data.gameState?.guessingSource || null);
+      setPausedGameTime(data.gameState?.guessingSource === 'manual'
+        ? (data.gameState?.remainingTime ?? null)
+        : null);
       setLocationQuery('');
 
       if (!data.gameState) {
@@ -133,6 +140,10 @@ function AppV2() {
         setWinReason('');
         setSpyName('');
         setHasVoted(false);
+        setVotedPlayerIds([]);
+        setIsScreenFolded(false);
+        setGuessingSource(null);
+        setPausedGameTime(null);
         return;
       }
 
@@ -148,6 +159,7 @@ function AppV2() {
       setRemainingTime(currentRemainingTime);
       setPhaseInitialTime(state.phaseRemainingTime ?? null);
       setHasVoted(Boolean(state.hasVoted));
+      setVotedPlayerIds(state.votedPlayerIds || []);
 
       if (state.result) {
         setWinner(['spy', 'citizens'].includes(state.result.winner) ? state.result.winner : null);
@@ -165,7 +177,10 @@ function AppV2() {
     const onPlayerUpdate = (updatedPlayers) => {
       setPlayers(updatedPlayers || []);
       const me = (updatedPlayers || []).find((player) => player.id === socket.id);
-      if (me) setIsHost(Boolean(me.isHost));
+      if (me) {
+        setIsHost(Boolean(me.isHost));
+        setIsScreenFolded(Boolean(me.isScreenFolded));
+      }
     };
 
     const onSettingsUpdated = (data) => {
@@ -183,24 +198,36 @@ function AppV2() {
       setWinReason('');
       setSpyName('');
       setHasVoted(false);
-      setIsSpyGuessing(false);
+      setVotedPlayerIds([]);
+      setIsScreenFolded(false);
+      setGuessingSource(null);
+      setPausedGameTime(null);
       setLocationQuery('');
       setView('game');
     };
 
     const onStartVoting = (data = {}) => {
       setHasVoted(false);
+      setVotedPlayerIds([]);
+      setIsScreenFolded(false);
+      setGuessingSource(null);
+      setPausedGameTime(null);
       setPhaseInitialTime(data.remainingTime ?? 30);
       setView('voting');
     };
 
     const onSpyGuessPhase = (data = {}) => {
       setLocationQuery('');
-      setPhaseInitialTime(data.remainingTime ?? 30);
+      const source = data.source || 'vote';
+      setGuessingSource(source);
+      setPausedGameTime(source === 'manual' ? (data.pausedGameTime ?? 0) : null);
+      setPhaseInitialTime(source === 'vote' ? (data.remainingTime ?? 30) : null);
+      setIsScreenFolded(false);
       setView('guessing');
     };
 
     const onVoteRecorded = () => setHasVoted(true);
+    const onVotingUpdate = (data = {}) => setVotedPlayerIds(data.votedPlayerIds || []);
 
     const onGameOver = ({ winner: nextWinner, reason, location, spyName: nextSpyName }) => {
       const validWinner = ['spy', 'citizens'].includes(nextWinner) ? nextWinner : null;
@@ -208,6 +235,10 @@ function AppV2() {
       setWinReason(validWinner ? (reason || '') : 'เซิร์ฟเวอร์ส่งผลเกมไม่สมบูรณ์ กรุณาเริ่มรอบใหม่');
       setSpyName(nextSpyName || '');
       setPhaseInitialTime(null);
+      setVotedPlayerIds([]);
+      setIsScreenFolded(false);
+      setGuessingSource(null);
+      setPausedGameTime(null);
       if (location) {
         setGameData((previous) => previous ? { ...previous, location } : previous);
       }
@@ -223,7 +254,10 @@ function AppV2() {
       setWinReason('');
       setSpyName('');
       setHasVoted(false);
-      setIsSpyGuessing(false);
+      setVotedPlayerIds([]);
+      setIsScreenFolded(false);
+      setGuessingSource(null);
+      setPausedGameTime(null);
       setLocationQuery('');
       setError('');
     };
@@ -246,6 +280,11 @@ function AppV2() {
       setRemainingTime(null);
       setPhaseInitialTime(null);
       setWinner(null);
+      setHasVoted(false);
+      setVotedPlayerIds([]);
+      setIsScreenFolded(false);
+      setGuessingSource(null);
+      setPausedGameTime(null);
       setView('home');
       setError(message || 'ห้องเดิมสิ้นสุดแล้ว กรุณาเข้าห้องใหม่');
     };
@@ -260,6 +299,7 @@ function AppV2() {
     socket.on('start_voting', onStartVoting);
     socket.on('spy_guess_phase', onSpyGuessPhase);
     socket.on('vote_recorded', onVoteRecorded);
+    socket.on('voting_update', onVotingUpdate);
     socket.on('game_over', onGameOver);
     socket.on('room_reset', onRoomReset);
     socket.on('public_rooms_list', onPublicRooms);
@@ -280,6 +320,7 @@ function AppV2() {
       socket.off('start_voting', onStartVoting);
       socket.off('spy_guess_phase', onSpyGuessPhase);
       socket.off('vote_recorded', onVoteRecorded);
+      socket.off('voting_update', onVotingUpdate);
       socket.off('game_over', onGameOver);
       socket.off('room_reset', onRoomReset);
       socket.off('public_rooms_list', onPublicRooms);
@@ -309,24 +350,45 @@ function AppV2() {
     localStorage.removeItem(STORAGE.sessionToken);
   };
 
-  const createRoom = (publicRoom) => {
-    const name = playerName.trim();
-    if (!name) return setError('กรุณาใส่ชื่อ');
+  const requestCreateRoom = () => {
     setError('');
-    socket.emit('create_room', { playerName: name, isPublic: publicRoom });
+    setPendingEntry({ type: 'create', returnView: 'home' });
+    setView('name_entry');
   };
 
-  const joinRoom = (targetRoomId = roomId) => {
-    const name = playerName.trim();
+  const requestJoinRoom = (targetRoomId = roomId, returnView = 'home') => {
     const target = String(targetRoomId || '').trim().toUpperCase();
-    if (!name || !target) return setError('กรุณาใส่ชื่อและรหัสห้อง');
+    if (!target) return setError('กรุณาใส่รหัสห้อง');
 
     setError('');
+    setPendingEntry({ type: 'join', roomId: target, returnView });
+    setView('name_entry');
+  };
+
+  const submitPlayerName = () => {
+    const name = playerName.trim();
+    if (!name) return setError('กรุณาใส่ชื่อ');
+    if (!pendingEntry) return setView('home');
+
+    setError('');
+    if (pendingEntry.type === 'create') {
+      socket.emit('create_room', { playerName: name });
+      return;
+    }
+
+    const target = pendingEntry.roomId;
     socket.emit('join_room', {
       roomId: target,
       playerName: name,
       sessionToken: sessionRef.current.roomId === target ? sessionToken : '',
     });
+  };
+
+  const cancelNameEntry = () => {
+    const returnView = pendingEntry?.returnView || 'home';
+    setPendingEntry(null);
+    setError('');
+    setView(returnView);
   };
 
   const fetchPublicRooms = () => {
@@ -353,6 +415,11 @@ function AppV2() {
     setWinReason('');
     setSpyName('');
     setHasVoted(false);
+    setVotedPlayerIds([]);
+    setIsScreenFolded(false);
+    setGuessingSource(null);
+    setPausedGameTime(null);
+    setPendingEntry(null);
     setError('');
     setView('home');
   };
@@ -397,6 +464,16 @@ function AppV2() {
     socket.emit('vote_player', { roomId, suspectId });
   };
 
+  const toggleScreenFolded = (folded) => {
+    setError('');
+    socket.emit('set_screen_folded', { roomId, folded });
+  };
+
+  const requestSpyGuess = () => {
+    setError('');
+    socket.emit('spy_start_guess', { roomId });
+  };
+
   const guessLocation = (locationName) => {
     setError('');
     socket.emit('spy_guess_location', { roomId, locationName });
@@ -429,7 +506,7 @@ function AppV2() {
       </div>
 
       <main className="relative z-10 mx-auto min-h-[100dvh] w-full max-w-md px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))] sm:max-w-lg sm:px-6">
-        {view !== 'home' && (
+        {view !== 'home' && view !== 'name_entry' && (
           <AppHeader
             roomId={roomId}
             isConnected={isConnected}
@@ -474,19 +551,9 @@ function AppV2() {
                   </div>
                   <Fingerprint size={26} strokeWidth={1.3} className="text-[#526474]" />
                 </div>
-                <div>
-                  <label className="mb-2 block font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-[#718492]">ชื่อสายลับ</label>
-                  <Input
-                    placeholder="ระบุ Codename"
-                    value={playerName}
-                    onChange={(event) => setPlayerName(event.target.value)}
-                  />
-                </div>
-
-                <div className="grid min-w-0 grid-cols-2 gap-2.5">
-                  <Button onClick={() => createRoom(false)} className="w-full px-2.5 text-sm sm:text-base"><LockKeyhole size={17} /> สร้างห้อง</Button>
-                  <Button onClick={() => createRoom(true)} variant="secondary" className="w-full px-2.5 text-sm sm:text-base"><Globe2 size={17} /> สาธารณะ</Button>
-                </div>
+                <Button onClick={requestCreateRoom} className="w-full text-sm sm:text-base">
+                  สร้างห้อง
+                </Button>
 
                 <div className="relative py-1">
                   <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/[0.08]" /></div>
@@ -500,7 +567,7 @@ function AppV2() {
                     onChange={(event) => setRoomId(event.target.value.toUpperCase())}
                     className="text-center font-mono font-bold uppercase tracking-[0.2em]"
                   />
-                  <Button onClick={() => joinRoom()} variant="secondary" className="px-3.5 text-sm sm:text-base">เข้าร่วม <ChevronRight size={16} /></Button>
+                  <Button onClick={() => requestJoinRoom()} variant="secondary" className="px-3.5 text-sm sm:text-base">เข้าร่วม <ChevronRight size={16} /></Button>
                 </div>
 
                 <Button onClick={fetchPublicRooms} variant="outline" className="w-full"><Search size={17} /> ค้นหาห้องสาธารณะ</Button>
@@ -508,6 +575,53 @@ function AppV2() {
               </Card>
 
               <p className="mt-5 text-center font-mono text-[9px] uppercase tracking-[0.18em] text-[#4f606d]">88 locations · secure reconnect · 3–12 agents</p>
+            </motion.div>
+          )}
+
+          {view === 'name_entry' && (
+            <motion.div
+              key="name-entry"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -16 }}
+              className="flex min-h-[calc(100dvh-2rem)] flex-col justify-center py-5"
+            >
+              <Card className="space-y-5">
+                <div className="flex items-center justify-between border-b border-white/[0.07] pb-4">
+                  <div>
+                    <p className="font-mono text-[9px] font-bold uppercase tracking-[0.28em] text-[#ee4b55]">Agent identity</p>
+                    <h2 className="mt-1 text-2xl font-black">ตั้งชื่อผู้เล่น</h2>
+                    <p className="mt-1 text-sm text-slate-400">ชื่อนี้จะแสดงให้ผู้เล่นคนอื่นเห็นในห้อง</p>
+                  </div>
+                  <Fingerprint size={30} strokeWidth={1.3} className="text-[#526474]" />
+                </div>
+
+                {pendingEntry?.type === 'join' && (
+                  <div className="rounded-xl border border-white/[0.08] bg-white/[0.035] px-4 py-3">
+                    <div className="font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">Room code</div>
+                    <div className="mt-1 font-mono text-xl font-black tracking-[0.18em] text-white">{pendingEntry.roomId}</div>
+                  </div>
+                )}
+
+                <div>
+                  <label className="mb-2 block font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-[#718492]">ชื่อสายลับ</label>
+                  <Input
+                    autoFocus
+                    placeholder="ระบุ Codename"
+                    value={playerName}
+                    onChange={(event) => setPlayerName(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') submitPlayerName();
+                    }}
+                  />
+                </div>
+
+                <Button onClick={submitPlayerName} className="w-full">
+                  {pendingEntry?.type === 'create' ? 'สร้างห้อง' : 'เข้าห้อง'} <ChevronRight size={17} />
+                </Button>
+                <Button onClick={cancelNameEntry} variant="outline" className="w-full">← กลับ</Button>
+                {error && <ErrorBanner message={error} />}
+              </Card>
             </motion.div>
           )}
 
@@ -520,11 +634,6 @@ function AppV2() {
               </div>
 
               <Card className="space-y-5">
-                <div>
-                  <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-slate-500">ชื่อผู้เล่น</label>
-                  <Input placeholder="ชื่อของคุณ" value={playerName} onChange={(event) => setPlayerName(event.target.value)} />
-                </div>
-
                 <Button onClick={() => socket.emit('get_public_rooms')} variant="secondary" className="w-full"><RefreshCw size={17} /> รีเฟรชรายการ</Button>
 
                 <div className="max-h-[55dvh] space-y-3 overflow-y-auto pr-1">
@@ -541,7 +650,7 @@ function AppV2() {
                         <div className="mt-1 text-sm font-medium text-slate-300">Host: {room.hostName}</div>
                         <div className="mt-1 text-xs text-slate-500">● {room.playerCount}/12 คน</div>
                       </div>
-                      <Button onClick={() => joinRoom(room.roomId)} className="min-h-11 px-4 py-2 text-sm">เข้าร่วม</Button>
+                      <Button onClick={() => requestJoinRoom(room.roomId, 'server_list')} className="min-h-11 px-4 py-2 text-sm">เข้าร่วม</Button>
                     </div>
                   ))}
                 </div>
@@ -722,7 +831,7 @@ function AppV2() {
                 <Timer initialTime={gameData.gameLength} onTick={setRemainingTime} />
               </div>
 
-              {!isSpyGuessing ? (
+              {!isScreenFolded ? (
                 <>
                   <Card className={`relative overflow-hidden py-7 text-center ${gameData.isSpy ? 'border-[#ff4d75]/20 bg-gradient-to-b from-[#ff4d75]/10 to-[#111a2e]/90' : 'border-emerald-400/15 bg-gradient-to-b from-emerald-400/[0.07] to-[#111a2e]/90'}`}>
                     <div className={`absolute inset-x-0 top-0 h-1 ${gameData.isSpy ? 'bg-gradient-to-r from-[#ff4d75] to-orange-400' : 'bg-gradient-to-r from-emerald-400 to-cyan-400'}`} />
@@ -737,19 +846,23 @@ function AppV2() {
 
                     {gameData.isSpy && (
                       <div className="mt-7 rounded-2xl border border-white/[0.07] bg-black/10 p-3">
-                        <p className="mb-3 text-sm text-slate-400">จับคำใบ้ให้ได้ แล้วทายใน 1 นาทีสุดท้าย</p>
+                        <p className="mb-3 text-sm text-slate-400">จับคำใบ้ให้ได้ แล้วโหวตทายสถานที่ได้ใน 1 นาทีสุดท้าย</p>
                         <Button
-                          onClick={() => setIsSpyGuessing(true)}
+                          onClick={requestSpyGuess}
                           disabled={(remainingTime ?? gameData.gameLength) > 60}
                           className="w-full"
                         >
                           {(remainingTime ?? gameData.gameLength) > 60
-                            ? `ทายได้ในอีก ${Math.floor(((remainingTime ?? gameData.gameLength) - 60) / 60)}:${String(((remainingTime ?? gameData.gameLength) - 60) % 60).padStart(2, '0')}`
-                            : <><Target size={17} /> ทายสถานที่ตอนนี้</>}
+                            ? `ทายได้ในอีก ${formatSeconds((remainingTime ?? gameData.gameLength) - 60)}`
+                            : <><Target size={17} /> โหวตทายสถานที่</>}
                         </Button>
                       </div>
                     )}
                   </Card>
+
+                  <Button onClick={() => toggleScreenFolded(true)} variant="outline" className="w-full">
+                    <EyeOff size={17} /> เปิดโหมดกันมอง / พับจอ
+                  </Button>
 
                   <Card>
                     <div className="mb-4 flex items-center justify-between">
@@ -765,16 +878,58 @@ function AppV2() {
                       ))}
                     </div>
                   </Card>
+
+                  <Card>
+                    <div className="mb-4 flex items-center justify-between">
+                      <div>
+                        <p className="font-mono text-[9px] font-bold uppercase tracking-[0.25em] text-cyan-300">Room status</p>
+                        <h3 className="mt-1 text-lg font-black">ผู้เล่นตอนนี้</h3>
+                      </div>
+                      <span className="rounded-full bg-white/[0.05] px-3 py-1 text-xs font-bold text-slate-500">{connectedPlayers.length}/{players.length}</span>
+                    </div>
+                    <div className="space-y-2">
+                      {players.map((player) => (
+                        <div key={player.id} className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2.5">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/[0.06] text-sm font-black text-white">{player.name?.[0]?.toUpperCase() || '?'}</div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="truncate text-sm font-bold text-white">{player.name}{player.id === socket.id ? ' (คุณ)' : ''}</span>
+                              {player.isHost && <Crown size={13} className="shrink-0 text-amber-300" />}
+                            </div>
+                            <div className={`mt-0.5 text-[11px] ${!player.connected ? 'text-[#f0656e]' : player.isScreenFolded ? 'text-cyan-300' : 'text-slate-500'}`}>
+                              {!player.connected
+                                ? 'การเชื่อมต่อหลุด'
+                                : player.isScreenFolded
+                                  ? `พับจออยู่ · เหลือเวลาเกม ${formatSeconds(remainingTime ?? gameData.gameLength)}`
+                                  : 'กำลังเล่น'}
+                            </div>
+                          </div>
+                          <span className={`h-2.5 w-2.5 rounded-full ${!player.connected ? 'bg-[#ee4b55]' : player.isScreenFolded ? 'bg-cyan-300 animate-pulse' : 'bg-emerald-400'}`} />
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
                 </>
               ) : (
-                <LocationPicker
-                  query={locationQuery}
-                  setQuery={setLocationQuery}
-                  locations={filteredLocations}
-                  total={gameData.allLocations?.length || 0}
-                  onPick={guessLocation}
-                  onCancel={() => { setIsSpyGuessing(false); setLocationQuery(''); }}
-                />
+                <>
+                  <Card className="border-cyan-400/15 bg-gradient-to-b from-cyan-400/[0.06] to-[#111a2e]/90">
+                    <div className="mb-5 text-center">
+                      <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center border border-cyan-400/20 bg-cyan-400/[0.07] text-cyan-300"><EyeOff size={28} /></div>
+                      <h2 className="text-xl font-black">โหมดกันมองเปิดอยู่</h2>
+                      <p className="mt-1 text-sm text-slate-400">Role และสถานที่จริงถูกซ่อนแล้ว</p>
+                    </div>
+                    <div className="mb-3 flex items-center justify-between">
+                      <h3 className="font-bold text-white">รายชื่อสถานที่ในรอบนี้</h3>
+                      <span className="text-xs font-bold text-slate-500">{gameData.allLocations?.length || 0} แห่ง</span>
+                    </div>
+                    <div className="grid max-h-[52dvh] grid-cols-2 gap-2 overflow-y-auto pr-1 text-sm">
+                      {(gameData.allLocations || []).map((location) => (
+                        <div key={location} className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-2.5 text-slate-400">{location}</div>
+                      ))}
+                    </div>
+                  </Card>
+                  <Button onClick={() => toggleScreenFolded(false)} className="w-full"><Eye size={17} /> ปิดโหมดกันมอง</Button>
+                </>
               )}
 
               {error && <ErrorBanner message={error} />}
@@ -793,33 +948,56 @@ function AppV2() {
               </div>
 
               <Card>
+                <div className="mb-3 flex items-center justify-between">
+                  <div>
+                    <p className="font-mono text-[9px] font-bold uppercase tracking-[0.24em] text-emerald-300">Vote status</p>
+                    <h3 className="mt-1 text-lg font-black">ใครโหวตแล้วบ้าง</h3>
+                  </div>
+                  <span className="rounded-full bg-white/[0.05] px-3 py-1 text-xs font-bold text-slate-400">
+                    {votedPlayerIds.length}/{connectedPlayers.length}
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {players.filter((player) => player.connected).map((player) => {
+                    const voted = votedPlayerIds.includes(player.id);
+                    return (
+                      <div key={player.id} className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2.5">
+                        <div className={`flex h-8 w-8 items-center justify-center rounded-lg border ${voted ? 'border-emerald-400/25 bg-emerald-400/[0.08] text-emerald-300' : 'border-white/[0.08] bg-white/[0.03] text-slate-600'}`}>
+                          {voted ? <Check size={15} strokeWidth={3} /> : <span className="h-2 w-2 rounded-full bg-slate-600" />}
+                        </div>
+                        <span className="min-w-0 flex-1 truncate text-sm font-bold text-white">{player.name}{player.id === socket.id ? ' (คุณ)' : ''}</span>
+                        <span className={`text-xs font-bold ${voted ? 'text-emerald-300' : 'text-slate-500'}`}>{voted ? 'โหวตแล้ว' : 'ยังไม่โหวต'}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Card>
+
+              <Card>
                 {!hasVoted ? (
                   <div className="space-y-2">
-                    {players.map((player) => {
-                      const isSelf = player.id === socket.id;
-                      return (
-                        <button
-                          key={player.id}
-                          type="button"
-                          onClick={() => votePlayer(player.id)}
-                          disabled={!player.connected || isSelf}
-                          className={`flex min-h-16 w-full items-center gap-3 rounded-2xl border p-3.5 text-left transition-all ${player.connected && !isSelf ? 'border-white/[0.08] bg-white/[0.035] active:scale-[0.98] active:border-[#ff6688]/30 active:bg-[#ff4d75]/10' : 'cursor-not-allowed border-white/[0.04] bg-black/10 opacity-40'}`}
-                        >
-                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-600 to-slate-700 font-black text-white">{player.name?.[0]?.toUpperCase() || '?'}</div>
-                          <div className="min-w-0 flex-1">
-                            <div className="truncate text-base font-bold text-white">{player.name}</div>
-                            <div className="mt-0.5 text-xs text-slate-500">{isSelf ? 'คุณโหวตตัวเองไม่ได้' : player.connected ? 'แตะเพื่อโหวต' : 'การเชื่อมต่อหลุด'}</div>
-                          </div>
-                          {!isSelf && player.connected && <ChevronRight size={19} className="text-slate-600" />}
-                        </button>
-                      );
-                    })}
+                    {players.filter((player) => player.id !== socket.id).map((player) => (
+                      <button
+                        key={player.id}
+                        type="button"
+                        onClick={() => votePlayer(player.id)}
+                        disabled={!player.connected}
+                        className={`flex min-h-16 w-full items-center gap-3 rounded-2xl border p-3.5 text-left transition-all ${player.connected ? 'border-white/[0.08] bg-white/[0.035] active:scale-[0.98] active:border-[#ff6688]/30 active:bg-[#ff4d75]/10' : 'cursor-not-allowed border-white/[0.04] bg-black/10 opacity-40'}`}
+                      >
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-600 to-slate-700 font-black text-white">{player.name?.[0]?.toUpperCase() || '?'}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-base font-bold text-white">{player.name}</div>
+                          <div className="mt-0.5 text-xs text-slate-500">{player.connected ? 'แตะเพื่อโหวต' : 'การเชื่อมต่อหลุด'}</div>
+                        </div>
+                        {player.connected && <ChevronRight size={19} className="text-slate-600" />}
+                      </button>
+                    ))}
                   </div>
                 ) : (
-                  <div className="py-10 text-center">
+                  <div className="py-8 text-center">
                     <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center border border-emerald-400/20 bg-emerald-400/[0.07] text-emerald-300"><CheckCircle2 size={34} strokeWidth={1.5} /></div>
                     <h3 className="mb-2 text-xl font-black">ส่งคะแนนแล้ว</h3>
-                    <p className="text-sm text-slate-400"><span className="animate-pulse">●</span> รอผู้เล่นคนอื่น...</p>
+                    <p className="text-sm text-slate-400"><span className="animate-pulse">●</span> ดูสถานะด้านบนเพื่อรอคนที่เหลือ</p>
                   </div>
                 )}
               </Card>
@@ -833,9 +1011,16 @@ function AppV2() {
               <div className="py-3 text-center">
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center border border-orange-400/25 bg-orange-400/[0.08] text-orange-300"><Target size={34} strokeWidth={1.4} /></div>
                 <p className="mb-1 font-mono text-[9px] font-bold uppercase tracking-[0.28em] text-orange-300">Final protocol</p>
-                <h2 className="mb-2 text-3xl font-black tracking-tight">Spy ถูกจับได้!</h2>
-                <p className="mb-4 text-sm text-slate-400">เหลือโอกาสสุดท้ายในการทายสถานที่</p>
-                <Timer initialTime={phaseInitialTime ?? 30} />
+                <h2 className="mb-2 text-3xl font-black tracking-tight">{guessingSource === 'manual' ? 'Spy หยุดเกมเพื่อทาย!' : 'Spy ถูกจับได้!'}</h2>
+                <p className="mb-4 text-sm text-slate-400">{guessingSource === 'manual' ? 'เวลาเกมถูกหยุดแล้ว เลือกสถานที่เพื่อชี้ขาดทันที' : 'เหลือโอกาสสุดท้ายในการทายสถานที่'}</p>
+                {guessingSource === 'manual' ? (
+                  <div className="inline-flex items-center gap-3 border border-orange-400/25 bg-orange-400/[0.08] px-5 py-2.5 font-mono text-orange-300">
+                    <span className="h-2.5 w-2.5 rounded-full bg-orange-300" />
+                    <span className="text-2xl font-black tracking-tight">หยุดที่ {formatSeconds(pausedGameTime ?? remainingTime ?? 0)}</span>
+                  </div>
+                ) : (
+                  <Timer initialTime={phaseInitialTime ?? 30} />
+                )}
               </div>
 
               {gameData.isSpy ? (
@@ -936,6 +1121,13 @@ function ErrorBanner({ message }) {
       <span>{message}</span>
     </div>
   );
+}
+
+function formatSeconds(value) {
+  const total = Math.max(0, Math.floor(Number(value) || 0));
+  const minutes = Math.floor(total / 60);
+  const seconds = total % 60;
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
 
 function LocationPicker({ query, setQuery, locations, total, onPick, onCancel }) {
