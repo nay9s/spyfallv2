@@ -30,9 +30,14 @@ export const Timer = ({ initialTime, onTick }) => {
     const minutes = Math.floor(timeLeft / 60);
     const seconds = timeLeft % 60;
 
+    const isUrgent = timeLeft <= 60;
+
     return (
-        <div className={`text-4xl font-bold font-mono mb-4 ${timeLeft <= 60 ? 'text-red-500 animate-pulse' : 'text-rose-500'}`}>
-            {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+        <div className={`inline-flex items-center gap-3 rounded-full border px-5 py-2.5 font-mono shadow-lg ${isUrgent ? 'border-[#ff4d75]/40 bg-[#ff4d75]/10 text-[#ff6b8c] shadow-[#ff4d75]/10' : 'border-cyan-400/20 bg-cyan-400/[0.08] text-cyan-300 shadow-cyan-500/5'}`}>
+            <span className={`h-2.5 w-2.5 rounded-full ${isUrgent ? 'bg-[#ff4d75] animate-pulse' : 'bg-cyan-400'}`} />
+            <span className="text-2xl font-black tracking-tight">
+                {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+            </span>
         </div>
     );
 };

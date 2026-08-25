@@ -4,9 +4,10 @@ import { motion } from 'framer-motion';
 export const Card = ({ children, className = '' }) => {
     return (
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`bg-slate-800/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-slate-700/50 ${className}`}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+            className={`bg-[#111a2e]/88 backdrop-blur-xl rounded-[1.75rem] p-5 sm:p-6 shadow-[0_18px_60px_rgba(0,0,0,0.28)] border border-white/[0.08] ${className}`}
         >
             {children}
         </motion.div>

@@ -7,8 +7,20 @@ const { locations } = require('./gameData');
 
 const app = express();
 
-let CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
-if (CLIENT_URL.endsWith('/')) CLIENT_URL = CLIENT_URL.slice(0, -1);
+const normalizeOrigin = (value) => String(value || '').trim().replace(/\/$/, '');
+const configuredClientOrigins = String(
+  process.env.CLIENT_URLS || process.env.CLIENT_URL || '',
+)
+  .split(',')
+  .map(normalizeOrigin)
+  .filter(Boolean);
+
+const allowedClientOrigins = new Set([
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'https://spyfallv2-client.onrender.com',
+  ...configuredClientOrigins,
+]);
 
 const corsOptions = {
   origin(origin, callback) {
@@ -20,7 +32,7 @@ const corsOptions = {
       origin.includes('127.0.0.1') ||
       origin.startsWith('http://192.168.') ||
       origin.startsWith('http://10.') ||
-      (CLIENT_URL && origin === CLIENT_URL)
+      allowedClientOrigins.has(normalizeOrigin(origin))
     ) {
       return callback(null, true);
     }
